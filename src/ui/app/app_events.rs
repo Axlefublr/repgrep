@@ -32,6 +32,7 @@ impl App {
 
                 // Common Ctrl+Key scroll keybindings that apply to multiple modes.
                 let control_pressed = key.modifiers.contains(KeyModifiers::CONTROL);
+                let alt_pressed = key.modifiers.contains(KeyModifiers::ALT);
                 if control_pressed {
                     let did_handle_key = match &self.ui_state {
                         AppUiState::SelectMatches
@@ -131,16 +132,17 @@ impl App {
                         }
                     }
                     AppUiState::InputReplacement(ref input, pos) => match key.code {
-                        // input char, or detect changing to next mode
+                        KeyCode::Char('u') if control_pressed => {
+                            self.ui_state = AppUiState::InputReplacement(
+                                Default::default(),
+                                Default::default(),
+                            );
+                        }
+                        // input char
                         KeyCode::Char(ch) => {
-                            if control_pressed && ch == 's' {
-                                self.ui_state =
-                                    AppUiState::ConfirmReplacement(input.to_owned(), *pos);
-                            } else {
-                                let mut new_input = input.clone();
-                                new_input.insert(byte_pos_from_char_pos(input, *pos), ch);
-                                self.ui_state = AppUiState::InputReplacement(new_input, pos + 1);
-                            }
+                            let mut new_input = input.clone();
+                            new_input.insert(byte_pos_from_char_pos(input, *pos), ch);
+                            self.ui_state = AppUiState::InputReplacement(new_input, pos + 1);
                         }
                         // remove character behind cursor
                         KeyCode::Backspace => {
@@ -162,9 +164,14 @@ impl App {
                         KeyCode::Esc => self.ui_state = AppUiState::SelectMatches,
                         // insert return character
                         KeyCode::Enter => {
-                            let mut new_input = input.clone();
-                            new_input.insert(byte_pos_from_char_pos(input, *pos), '\n');
-                            self.ui_state = AppUiState::InputReplacement(new_input, pos + 1);
+                            if alt_pressed {
+                                let mut new_input = input.clone();
+                                new_input.insert(byte_pos_from_char_pos(input, *pos), '\n');
+                                self.ui_state = AppUiState::InputReplacement(new_input, pos + 1);
+                            } else {
+                                self.ui_state =
+                                    AppUiState::ConfirmReplacement(input.to_owned(), *pos);
+                            }
                         }
                         // move cursor back
                         KeyCode::Left => {
@@ -1007,7 +1014,7 @@ mod tests {
         send_key_assert!(app, key!(PageDown), "repgrep", 7);
 
         // move to next mode
-        send_key!(app, key!(Char('s'), modifiers = KeyModifiers::CONTROL));
+        send_key!(app, key!(Char(';'), modifiers = KeyModifiers::ALT));
         assert_eq!(
             app.ui_state,
             AppUiState::ConfirmReplacement("repgrep".into(), 7)
