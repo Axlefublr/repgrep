@@ -93,7 +93,7 @@ impl App {
                     AppUiState::SelectMatches => {
                         let shift = key.modifiers.contains(KeyModifiers::SHIFT);
                         match key.code {
-                            KeyCode::Up | KeyCode::Char('k') | KeyCode::Char('K') => self.move_pos(
+                            KeyCode::Up | KeyCode::Char('k') => self.move_pos(
                                 if shift {
                                     Movement::PrevFile
                                 } else {
@@ -101,27 +101,28 @@ impl App {
                                 },
                                 term_size,
                             ),
-                            KeyCode::Down | KeyCode::Char('j') | KeyCode::Char('J') => self
-                                .move_pos(
-                                    if shift {
-                                        Movement::NextFile
-                                    } else {
-                                        Movement::NextLine
-                                    },
-                                    term_size,
-                                ),
+                            KeyCode::Down | KeyCode::Char('j') => self.move_pos(
+                                if shift {
+                                    Movement::NextFile
+                                } else {
+                                    Movement::NextLine
+                                },
+                                term_size,
+                            ),
                             KeyCode::Left | KeyCode::Char('h') | KeyCode::Char('H') => {
-                                self.move_pos(Movement::Prev, term_size)
+                                self.move_pos(Movement::PrevFile, term_size)
                             }
                             KeyCode::Right | KeyCode::Char('l') | KeyCode::Char('L') => {
-                                self.move_pos(Movement::Next, term_size)
+                                self.move_pos(Movement::NextFile, term_size)
                             }
-                            KeyCode::Char(' ') => self.toggle_item(false),
+                            KeyCode::Char(' ') | KeyCode::Char(';') => self.toggle_item(false),
                             KeyCode::Char('s') | KeyCode::Char('S') => self.toggle_item(true),
                             KeyCode::Char('a') | KeyCode::Char('A') => self.toggle_all_items(),
                             KeyCode::Char('v') => self.invert_selection_current(),
                             KeyCode::Char('V') => self.invert_selection_all(),
-                            KeyCode::Esc | KeyCode::Char('q') => self.state = AppState::Cancelled,
+                            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('K') => {
+                                self.state = AppState::Cancelled
+                            }
                             KeyCode::Char('?') => self.ui_state = AppUiState::Help,
                             KeyCode::Enter | KeyCode::Char('r') | KeyCode::Char('R') => {
                                 self.ui_state = AppUiState::InputReplacement(String::new(), 0)
